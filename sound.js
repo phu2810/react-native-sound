@@ -34,18 +34,18 @@ function Sound(filename, basePath, onError, options) {
 
     if (!IsWindows) {
       this.onPlaySubscription = eventEmitter.addListener(
-        'onPlayChange',
-        (param) => {
-          const { isPlaying, playerKey } = param;
-          if (playerKey === this._key) {
-            if (isPlaying) {
-              this._playing = true;
+          'onPlayChange',
+          (param) => {
+            const { isPlaying, playerKey } = param;
+            if (playerKey === this._key) {
+              if (isPlaying) {
+                this._playing = true;
+              }
+              else {
+                this._playing = false;
+              }
             }
-            else {
-              this._playing = false;
-            }
-          }
-        },
+          },
       );
     }
   }
@@ -82,9 +82,14 @@ Sound.prototype.isLoaded = function() {
 
 Sound.prototype.play = function(onEnd) {
   if (this._loaded) {
-    RNSound.play(this._key, (successfully) => onEnd && onEnd(successfully));
+    Sound.setCategory('Playback');
+    RNSound.play(this._key, (successfully) => {
+      onEnd && onEnd(successfully);
+      Sound.setCategory('PlayAndRecord', false);
+    });
   } else {
-    onEnd && onEnd(false);
+    onEnd && onEnd(successfully);
+    Sound.setCategory('PlayAndRecord', false);
   }
   return this;
 };
@@ -94,7 +99,11 @@ Sound.prototype.pause = function(callback) {
     RNSound.pause(this._key, () => {
       this._playing = false;
       callback && callback();
+      Sound.setCategory('PlayAndRecord', false);
     });
+  }
+  else {
+    Sound.setCategory('PlayAndRecord', false);
   }
   return this;
 };
@@ -104,7 +113,11 @@ Sound.prototype.stop = function(callback) {
     RNSound.stop(this._key, () => {
       this._playing = false;
       callback && callback();
+      Sound.setCategory('PlayAndRecord', false);
     });
+  }
+  else {
+    Sound.setCategory('PlayAndRecord', false);
   }
   return this;
 };
@@ -114,6 +127,7 @@ Sound.prototype.reset = function() {
     RNSound.reset(this._key);
     this._playing = false;
   }
+  Sound.setCategory('PlayAndRecord', false);
   return this;
 };
 
@@ -127,6 +141,10 @@ Sound.prototype.release = function() {
         this.onPlaySubscription = null;
       }
     }
+    Sound.setCategory('PlayAndRecord', false);
+  }
+  else {
+    Sound.setCategory('PlayAndRecord', false);
   }
   return this;
 };
